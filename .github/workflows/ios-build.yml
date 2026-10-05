@@ -27,7 +27,7 @@ jobs:
             -target "Bruce Remote" \
             -configuration Release \
             -sdk iphoneos \
-            -derivedDataPath build \
+            SYMROOT="$PWD/build" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
@@ -38,7 +38,7 @@ jobs:
       - name: Package .ipa
         run: |
           mkdir -p payload/Payload
-          cp -R build/Build/Products/Release-iphoneos/*.app payload/Payload/
+          cp -R build/Release-iphoneos/*.app payload/Payload/
           cd payload && zip -qry ../BruceRemote-unsigned.ipa Payload
 
       - uses: actions/upload-artifact@v4
