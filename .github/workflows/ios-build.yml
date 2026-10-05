@@ -1,0 +1,48 @@
+name: Build iOS app
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          xcodebuild -list -project "Bruce Remote.xcodeproj"
+
+      # No shared scheme is committed, so build the target directly. No signing
+      # identity either (Config/Local.xcconfig is git-ignored), hence unsigned.
+      - name: Build (unsigned, Release)
+        run: |
+          xcodebuild build \
+            -project "Bruce Remote.xcodeproj" \
+            -target "Bruce Remote" \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS="" \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM=""
+
+      - name: Package .ipa
+        run: |
+          mkdir -p payload/Payload
+          cp -R build/Build/Products/Release-iphoneos/*.app payload/Payload/
+          cd payload && zip -qry ../BruceRemote-unsigned.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BruceRemote-unsigned-ipa
+          path: BruceRemote-unsigned.ipa
+          if-no-files-found: error
